@@ -1,38 +1,61 @@
+.visible {
+  visibility: visible;
+}
+.invisible {
+  visibility: hidden;
+  display: none;
+}
+
 .App {
+}
+
+.VictoryBanner {
+  font-size: 3em;
   text-align: center;
+  font-weight: bold;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.Grid {
+  border-bottom: 1px solid black;
+  border-right: 1px solid black;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.Row {
+  display:  flex;
+  flex-direction: row;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+.Cell {
+  border-top: 1px solid black;
+  border-left: 1px solid black;
+  font-weight: bold;
+  font-size: 6vh;
+  text-align: center;
+  aspect-ratio: 1 / 1 ;
+  flex-grow: 1;
+  flex-shrink: 1;
+  flex-basis: 0;
+
+  /* Vertical align content center */
+  display:grid;align-items:center;justify-content:center;
+}
+
+.cell-black {
+  background: black;
   color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.cell-white {
+  background: white;
+  color: black;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.neighbor-count {
+  font-size: 12px;
+}
+
+.ControlPanel {
+  margin-top: 10px;
 }
