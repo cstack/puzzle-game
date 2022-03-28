@@ -3,98 +3,13 @@ import ReactDOM from 'react-dom';
 import logo from './logo.svg';
 import './water.css';
 import './App.css';
-
-const PUZZLE1 = [
-  [{filled: false, hint: null}, {filled: false, hint: null}, {filled: false, hint: null}, {filled: false, hint: null}, {filled: false, hint: null}],
-  [{filled: true, hint: 4}, {filled: true, hint: 4}, {filled: false, hint: null}, {filled: false, hint: 8}, {filled: false, hint: null}],
-  [{filled: false, hint: null}, {filled: false, hint: null}, {filled: false, hint: null}, {filled: false, hint: null}, {filled: false, hint: null}],
-  [{filled: false, hint: null}, {filled: false, hint: null}, {filled: false, hint: 4}, {filled: false, hint: null}, {filled: true, hint: 2}],
-  [{filled: false, hint: 4}, {filled: false, hint: null}, {filled: false, hint: null}, {filled: false, hint: null}, {filled: false, hint: null}],
-  [{filled: false, hint: null}, {filled: false, hint: 4}, {filled: false, hint: 3}, {filled: false, hint: null}, {filled: false, hint: 3}],
-  [{filled: true, hint: 2}, {filled: false, hint: null}, {filled: false, hint: null}, {filled: false, hint: 3}, {filled: false, hint: null}],
-];
-
-function checkPuzzle(puzzle) {
-  const rowCount = puzzle.length;
-  const columnCount = puzzle[0].length;
-  const neighborCounts = Array(rowCount).fill(null).map(() => Array(columnCount).fill(null).map(() => {
-    return {
-      unfilledNeighbors: 0,
-      filledNeighbors: 0,
-      filled: false,
-      hint: null,
-    };
-  }));
-  puzzle.forEach((row, rowIndex) => {
-    row.forEach((cell, columnIndex) => {
-      const filled = cell.filled || cell.annotation === "filled";
-      neighborCounts[rowIndex][columnIndex].filled = filled;
-      neighborCounts[rowIndex][columnIndex].hint = cell.hint;
-      neighborIndecies(rowIndex, columnIndex, rowCount, columnCount).forEach((coords) => {
-        if (filled) {
-          neighborCounts[coords[0]][coords[1]].filledNeighbors += 1;
-        } else {
-          neighborCounts[coords[0]][coords[1]].unfilledNeighbors += 1;
-        }
-      });
-    })
-  });
-  return neighborCounts.map((row) => {
-    return row.map((checkResult) => {
-      if (checkResult.hint === null) {
-        return {
-          requiredNeighbors: null,
-        }
-      } else {
-        return {
-          requiredNeighbors: checkResult.hint,
-          neighborsShouldBeFilled: !checkResult.filled,
-          actualNeighbors: checkResult.filled ? checkResult.unfilledNeighbors : checkResult.filledNeighbors,
-        }
-      }
-    });
-  });
-
-}
-
-function neighborIndecies(rowIndex, columnIndex, rowCount, columnCount) {
-  const result = [
-    [rowIndex - 1, columnIndex - 1],
-    [rowIndex - 1, columnIndex + 0],
-    [rowIndex - 1, columnIndex + 1],
-    [rowIndex + 0, columnIndex - 1],
-    // [rowIndex + 0, columnIndex + 0],
-    [rowIndex + 0, columnIndex + 1],
-    [rowIndex + 1, columnIndex - 1],
-    [rowIndex + 1, columnIndex + 0],
-    [rowIndex + 1, columnIndex + 1],
-  ].filter((coords) => {
-    return coords[0] >= 0 && coords[0] < rowCount && coords[1] >= 0 && coords[1] < columnCount;
-  });
-  return result;
-}
-
-function isSolved(puzzle) {
-  const neighborCounts = checkPuzzle(puzzle);
-  return neighborCounts.every((row, rowIndex) => {
-    return row.every((cell, columnIndex) => {
-      return cellIsValid(cell);
-    });
-  });
-}
-
-function cellIsValid(checkResult) {
-  if (checkResult.requiredNeighbors !== null) {
-    return checkResult.requiredNeighbors === checkResult.actualNeighbors;
-  } else {
-    return true;
-  }
-}
+import Puzzle from './Puzzle';
+import PuzzleLibrary from './PuzzleLibrary';
 
 class App extends React.Component {
   constructor(props) {
     super(props);
-    const puzzle = this.addEmptyAnnotations(PUZZLE1);
+    const puzzle = this.addEmptyAnnotations(PuzzleLibrary.PUZZLE1);
     this.state = {
       puzzle: puzzle,
       solved: false,
@@ -104,7 +19,7 @@ class App extends React.Component {
 
   render() {
     const solved = this.state.solved;
-    const neighborCounts = checkPuzzle(this.state.puzzle);
+    const neighborCounts = Puzzle.checkPuzzle(this.state.puzzle);
     return (
       <div className="App">
         <VictoryBanner visible={this.state.solved} />
@@ -143,7 +58,7 @@ class App extends React.Component {
       const newAnnotation = this.cycleAnnotation(oldAnnotation);
       puzzle[rowIndex][columnIndex].annotation = newAnnotation;
       this.setState({puzzle: puzzle});
-      if (isSolved(puzzle)) {
+      if (Puzzle.isSolved(puzzle)) {
         this.setState({solved: true});
       }
     } else {
@@ -309,6 +224,7 @@ class Row extends React.Component {
       return (
         <Cell
           key={key}
+          testid={key}
           value={cell}
           checkResult={this.props.neighborCounts[columnIndex]}
           showDetails={this.props.showDetails}
@@ -361,7 +277,7 @@ class Cell extends React.Component {
     if (checkResult.requiredNeighbors === null) {
       neighborIndicator = null;
     } else {
-      if (cellIsValid(checkResult)) {
+      if (Puzzle.cellIsValid(checkResult)) {
         neighborIndicator = "✅";
       } else {
         neighborIndicator = checkResult.actualNeighbors;
@@ -374,7 +290,7 @@ class Cell extends React.Component {
       contents.push(<span key="neighbor-count" className="neighbor-count">{neighborIndicator}</span>);
     }
     return (
-      <div className={className} onClick={this.props.onClick}>
+      <div data-testid={this.props.testid} className={className} onClick={this.props.onClick}>
         {contents}
       </div>
     );
