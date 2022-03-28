@@ -9,7 +9,7 @@ import PuzzleLibrary from './PuzzleLibrary';
 class App extends React.Component {
   constructor(props) {
     super(props);
-    const puzzle = this.addEmptyAnnotations(PuzzleLibrary.PUZZLE1);
+    const puzzle = this.addEmptyAnnotations(PuzzleLibrary.PUZZLE2);
     this.state = {
       puzzle: puzzle,
       solved: false,
