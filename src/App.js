@@ -9,9 +9,110 @@ import PuzzleLibrary from './PuzzleLibrary';
 class App extends React.Component {
   constructor(props) {
     super(props);
-    const puzzle = this.addEmptyAnnotations(PuzzleLibrary.PUZZLE2);
     this.state = {
-      puzzle: puzzle,
+      selectedPuzzle: null,
+    };
+  }
+
+  render() {
+    let contents = null;
+    if (this.state.selectedPuzzle === null) {
+      contents = <PuzzlePicker puzzles={PuzzleLibrary.ALL} handlePuzzlePicked={this.handlePuzzlePicked.bind(this)} />;
+    } else {
+      contents = <PuzzleSolvingView puzzle={this.state.selectedPuzzle} onExitView={this.handleExitPuzzleSolvingView.bind(this)} />
+    }
+    return (
+      <div className="App">
+        {contents}
+      </div>
+    );
+  }
+
+  handlePuzzlePicked(puzzle) {
+    this.setState({selectedPuzzle: puzzle});
+  }
+
+  handleExitPuzzleSolvingView() {
+    this.setState({selectedPuzzle: null});
+  }
+}
+
+class PuzzlePicker extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    let puzzles = this.props.puzzles.map((puzzle, puzzleId) => {
+      return <MiniPuzzleView key={puzzleId} puzzle={puzzle} onClick={() => { this.props.handlePuzzlePicked(puzzle) } } />
+    });
+    return (
+      <div className="PuzzlePicker">
+        <h1>Pick a Puzzle:</h1>
+        {puzzles}
+      </div>
+    );
+  }
+}
+
+class MiniPuzzleView extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    const rows = this.props.puzzle.map((row, rowIndex) => {
+      return <MiniPuzzleRow key={rowIndex} row={row} />;
+    });
+    return (
+      <div className="MiniPuzzleView" onClick={this.props.onClick}>
+        {rows}
+      </div>
+    );
+  }
+}
+
+class MiniPuzzleRow extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    const cells = this.props.row.map((cell, columnIndex) => {
+      return <MiniPuzzleCell key={columnIndex} cell={cell} />;
+    });
+    return (
+      <div className="MiniPuzzleRow">
+        {cells}
+      </div>
+    );
+  }
+}
+
+class MiniPuzzleCell extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    let className = "MiniPuzzleCell";
+    if (this.props.cell.filled) {
+      className += " cell-black";
+    } else {
+      className += " cell-white";
+    }
+    return (
+      <div className={className}>
+      </div>
+    );
+  }
+}
+
+class PuzzleSolvingView extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      puzzle: this.props.puzzle.slice(),
       solved: false,
       showDetails: false
     };
@@ -21,7 +122,7 @@ class App extends React.Component {
     const solved = this.state.solved;
     const neighborCounts = Puzzle.checkPuzzle(this.state.puzzle);
     return (
-      <div className="App">
+      <div className="PuzzleSolvingView">
         <VictoryBanner visible={this.state.solved} />
         <Grid
           puzzle={this.state.puzzle}
@@ -29,7 +130,11 @@ class App extends React.Component {
           showDetails={this.state.showDetails}
           handleCellClicked={this.handleCellClicked.bind(this)}
         />
-        <ControlPanel showDetails={this.state.showDetails} onToggleShowDetails={this.toggleShowDetails.bind(this)} />
+        <ControlPanel
+          showDetails={this.state.showDetails}
+          onToggleShowDetails={this.toggleShowDetails.bind(this)}
+          onBackClicked={this.props.onExitView}
+        />
       </div>
     );
   }
@@ -68,7 +173,8 @@ class App extends React.Component {
 
   cycleAnnotation(oldAnnotation) {
     switch(oldAnnotation) {
-      case(null) :
+      case(null):
+      case(undefined):
         return "filled";
       case("filled"):
         return "empty";
@@ -87,6 +193,7 @@ class ControlPanel extends React.Component {
   render() {
     return (
       <div className="ControlPanel">
+        <button onClick={this.props.onBackClicked}>Back</button>
         <HowToPlay />
         <DetailsToggle showDetails={this.props.showDetails} onChange={this.props.onToggleShowDetails} />
       </div>

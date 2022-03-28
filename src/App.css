@@ -33,13 +33,32 @@
   font-weight: bold;
   font-size: 6vh;
   text-align: center;
-  aspect-ratio: 1 / 1 ;
+  aspect-ratio: 1 / 1;
   flex-grow: 1;
   flex-shrink: 1;
   flex-basis: 0;
 
   /* Vertical align content center */
   display:grid;align-items:center;justify-content:center;
+}
+
+.MiniPuzzleView {
+  border-bottom: 1px solid black;
+  border-right: 1px solid black;
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.MiniPuzzleRow {
+  display:  flex;
+  flex-direction: row;
+}
+
+.MiniPuzzleCell {
+  border-top: 1px solid black;
+  border-left: 1px solid black;
+  width: 5vw;
+  aspect-ratio: 1 / 1;
 }
 
 .cell-black {

@@ -56,4 +56,6 @@ const PUZZLE2 = [
   ],
 ];
 
-export default { PUZZLE1, PUZZLE2 };
+const ALL = [PUZZLE1, PUZZLE2]
+
+export default { ALL, ...ALL };
