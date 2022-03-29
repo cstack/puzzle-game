@@ -11,12 +11,15 @@ class App extends React.Component {
     super(props);
     this.state = {
       selectedPuzzle: null,
+      editingPuzzle: false,
     };
   }
 
   render() {
     let contents = null;
-    if (this.state.selectedPuzzle === null) {
+    if (this.state.editingPuzzle) {
+      contents = <PuzzleEditor />
+    } else if (this.state.selectedPuzzle === null) {
       contents = <PuzzlePicker puzzles={PuzzleLibrary.ALL} handlePuzzlePicked={this.handlePuzzlePicked.bind(this)} />;
     } else {
       contents = <PuzzleSolvingView puzzle={this.state.selectedPuzzle} onExitView={this.handleExitPuzzleSolvingView.bind(this)} />
@@ -34,6 +37,118 @@ class App extends React.Component {
 
   handleExitPuzzleSolvingView() {
     this.setState({selectedPuzzle: null});
+  }
+}
+
+class PuzzleEditor extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      puzzle: this.generateEmptyPuzzle(),
+    };
+  }
+
+  render() {
+    const rowCount = this.state.puzzle.length;
+    const columnCount = this.state.puzzle[0].length;
+    const neighborCounts = Puzzle.checkPuzzle(this.state.puzzle);
+    return (
+      <div className="PuzzleEditor">
+        <div>
+          <label>{rowCount} Rows: </label>
+          <button onClick={() => { this.changeGridSize(true, -1); }}>-</button>
+          <button onClick={() => { this.changeGridSize(true, 1); }}>+</button>
+        </div>
+        <div>
+          <label>{columnCount} Columns: </label>
+          <button onClick={() => { this.changeGridSize(false, -1); }}>-</button>
+          <button onClick={() => { this.changeGridSize(false, 1); }}>+</button>
+        </div>
+        <button onClick={this.exportPuzzle.bind(this)}>Export</button>
+        <Grid
+          puzzle={this.state.puzzle}
+          neighborCounts={neighborCounts}
+          handleCellClicked={this.handleCellClicked.bind(this)}
+        />
+      </div>
+    );
+  }
+
+  exportPuzzle() {
+    console.log(JSON.stringify(this.state.puzzle));
+  }
+
+  emptyCell() {
+    return { hint: null };
+  }
+
+  generateEmptyPuzzle() {
+    return Array(5).fill(null).map(() => {
+      return Array(5).fill(null).map(() => {
+        return this.emptyCell();
+      });
+    });
+  }
+
+  changeGridSize(isRow, delta) {
+    const rowCount = this.state.puzzle.length;
+    const columnCount = this.state.puzzle[0].length;
+    let puzzle = this.state.puzzle.slice();
+    if (isRow) {
+      const newRowCount = rowCount + delta;
+      if (newRowCount < 1) {
+        return;
+      }
+      if (delta > 0) {
+        for (let i=0;i < delta;i++) {
+          puzzle.push(Array(columnCount).fill(null).map(() => { return this.emptyCell(); }))
+        }
+      } else {
+        for (let i=0; i < -delta;i++) {
+          puzzle.pop();
+        }
+      }
+    } else {
+      const newColumnCount = columnCount + delta;
+      if (newColumnCount < 1) {
+        return;
+      }
+      if (delta > 0) {
+        puzzle.forEach((row) => {
+          for (let i=0;i < delta;i++) {
+            row.push(this.emptyCell());
+          }
+        });
+      } else {
+        puzzle.forEach((row) => {
+          for (let i=0; i < -delta;i++) {
+            row.pop();
+          }
+        });
+      }
+    }
+    this.setState({puzzle: puzzle});
+  }
+
+  handleCellClicked(rowIndex, columnIndex) {
+    const puzzle = this.state.puzzle.slice();
+    const cell = puzzle[rowIndex][columnIndex];
+    puzzle[rowIndex][columnIndex] = this.cycleCell(cell);
+    this.setState({puzzle: puzzle});
+  }
+  
+  cycleCell(cell) {
+    let newCell = {};
+    if (cell.hint === null) {
+      newCell = { filled: false, hint: 0 }; 
+    } else if (cell.hint < 9) {
+      newCell = { filled: cell.filled, hint: cell.hint + 1};
+    } else if (cell.filled) {
+      newCell = { hint: null };
+    } else {
+      newCell = { filled: true, hint: 0 };
+    }
+    return newCell;
   }
 }
 
