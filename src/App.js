@@ -44,7 +44,7 @@ class PuzzlePicker extends React.Component {
 
   render() {
     let puzzles = this.props.puzzles.map((puzzle, puzzleId) => {
-      return <MiniPuzzleView key={puzzleId} puzzle={puzzle} onClick={() => { this.props.handlePuzzlePicked(puzzle) } } />
+      return <MiniPuzzleView key={puzzleId} testid={`puzzle-${puzzleId}`} puzzle={puzzle} onClick={() => { this.props.handlePuzzlePicked(puzzle) } } />
     });
     return (
       <div className="PuzzlePicker">
@@ -65,7 +65,7 @@ class MiniPuzzleView extends React.Component {
       return <MiniPuzzleRow key={rowIndex} row={row} />;
     });
     return (
-      <div className="MiniPuzzleView" onClick={this.props.onClick}>
+      <div className="MiniPuzzleView" data-testid={this.props.testid} onClick={this.props.onClick}>
         {rows}
       </div>
     );

@@ -3,12 +3,13 @@ import App from './App';
 
 test('renders the home page', () => {
   render(<App />);
-  const linkElement = screen.getByText(/How to Play/i);
+  const linkElement = screen.getByText(/Pick a Puzzle/i);
   expect(linkElement).toBeInTheDocument();
 });
 
 test('solving a puzzle', () => {
   render(<App />);
+  fireEvent.click(screen.getByTestId('puzzle-0'));
   fireEvent.click(screen.getByTestId('0-2'));
   fireEvent.click(screen.getByTestId('0-3'));
   fireEvent.click(screen.getByTestId('0-4'));

@@ -56,6 +56,7 @@ const PUZZLE2 = [
   ],
 ];
 
-const ALL = [PUZZLE1, PUZZLE2]
+const ALL_WITH_KEYS = { PUZZLE1, PUZZLE2 };
+const ALL = Object.values(ALL_WITH_KEYS);
 
-export default { ALL, ...ALL };
+export default { ALL: ALL, ...ALL_WITH_KEYS };
