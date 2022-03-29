@@ -213,7 +213,7 @@ class HowToPlay extends React.Component {
     let contents = [];
     return (
       <div className="HowToPlay">
-        <Collapsible buttonText="How to Play" text="Black squares with white text tell you how many neighbors are white. White cells with black text tell you how many neighbors are white. You can mark a cell as black or white. A '・' is a reminder to yourself that you know the cell is white."/>
+        <Collapsible buttonText="How to Play" text="Black squares with white text tell you how many neighbors are white. White squares with black text tell you how many neighbors are black. You can mark a square as black or white. A '・' is a reminder to yourself that you know the cell is white."/>
       </div>
     );
   }
