@@ -11,24 +11,45 @@ class App extends React.Component {
     super(props);
     this.state = {
       selectedPuzzle: null,
-      editingPuzzle: false,
+      editingEnabled: false,
+      debug: false, // show debug menu
     };
   }
 
   render() {
-    let contents = null;
-    if (this.state.editingPuzzle) {
-      contents = <PuzzleEditor />
-    } else if (this.state.selectedPuzzle === null) {
-      contents = <PuzzlePicker puzzles={PuzzleLibrary.ALL} handlePuzzlePicked={this.handlePuzzlePicked.bind(this)} />;
+    let contents = [];
+
+    if (this.state.debug && this.state.selectedPuzzle === null) {
+      contents.push(<label key="edit-label">Edit</label>);
+      contents.push(<input key="edit-toggle" type="checkbox" onClick={this.toggleEditing.bind(this)} />);
+      contents.push(<button key="new-puzzle-button" onClick={this.newPuzzle.bind(this)}>New Puzzle</button>);
+    }
+
+    if (this.state.selectedPuzzle === null) {
+      contents.push(<PuzzlePicker key="PuzzlePicker" puzzles={PuzzleLibrary.ALL} handlePuzzlePicked={this.handlePuzzlePicked.bind(this)} />);
     } else {
-      contents = <PuzzleSolvingView puzzle={this.state.selectedPuzzle} onExitView={this.handleExitPuzzleSolvingView.bind(this)} />
+      if (this.state.editingEnabled) {
+        contents.push(<PuzzleEditor key="PuzzleEditor" puzzle={this.state.selectedPuzzle} />);
+      } else {
+        contents.push(<PuzzleSolvingView key="PuzzleSolvingView" puzzle={this.state.selectedPuzzle} onExitView={this.handleExitPuzzleSolvingView.bind(this)} />);
+      }
     }
     return (
       <div className="App">
         {contents}
       </div>
     );
+  }
+
+  toggleEditing() {
+    this.setState({editingEnabled: !this.state.editingEnabled});
+  }
+
+  newPuzzle() {
+    this.setState({
+      editingEnabled: true,
+      selectedPuzzle: Puzzle.generateEmptyPuzzle(5, 5),
+    })
   }
 
   handlePuzzlePicked(puzzle) {
@@ -44,7 +65,7 @@ class PuzzleEditor extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      puzzle: this.generateEmptyPuzzle(),
+      puzzle: props.puzzle,
     };
   }
 
@@ -78,18 +99,6 @@ class PuzzleEditor extends React.Component {
     console.log(JSON.stringify(this.state.puzzle));
   }
 
-  emptyCell() {
-    return { hint: null };
-  }
-
-  generateEmptyPuzzle() {
-    return Array(5).fill(null).map(() => {
-      return Array(5).fill(null).map(() => {
-        return this.emptyCell();
-      });
-    });
-  }
-
   changeGridSize(isRow, delta) {
     const rowCount = this.state.puzzle.length;
     const columnCount = this.state.puzzle[0].length;
@@ -101,7 +110,7 @@ class PuzzleEditor extends React.Component {
       }
       if (delta > 0) {
         for (let i=0;i < delta;i++) {
-          puzzle.push(Array(columnCount).fill(null).map(() => { return this.emptyCell(); }))
+          puzzle.push(Array(columnCount).fill(null).map(() => { return Puzzle.emptyCell(); }))
         }
       } else {
         for (let i=0; i < -delta;i++) {
@@ -116,7 +125,7 @@ class PuzzleEditor extends React.Component {
       if (delta > 0) {
         puzzle.forEach((row) => {
           for (let i=0;i < delta;i++) {
-            row.push(this.emptyCell());
+            row.push(Puzzle.emptyCell());
           }
         });
       } else {

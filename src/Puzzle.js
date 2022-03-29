@@ -74,8 +74,22 @@ function cellIsValid(checkResult) {
   }
 }
 
+function generateEmptyPuzzle(numRows, numColumns) {
+  return Array(numRows).fill(null).map(() => {
+    return Array(numColumns).fill(null).map(() => {
+      return emptyCell();
+    });
+  });
+}
+
+function emptyCell() {
+  return { hint: null };
+}
+
 export default {
   cellIsValid,
   checkPuzzle,
+  emptyCell,
+  generateEmptyPuzzle,
   isSolved,
 };
