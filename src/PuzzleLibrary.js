@@ -8,13 +8,13 @@
   Addtional fields controlled by user input:
   - annotation: null if user has not annotated cell. "filled" if user marked as filled. "unfilled" if user marked as unfilled.
   Additonal fields derived from above fields:
-  - numNeighbors: how many neighbors does this cell have. 3 for corner. 5 for side. 8 for center.
   - numFilledNeighbors: how many neighbors are filled (either given or annotated)
   - numUnfilledNeighbors: how many neighbors are unfilled (annotated)
+  - numUndecidedNeighbors: how many neighbors are neither filled nor explicitily unfilled
 
   Lifecycle of puzzle:
   - Defined in this module with only `hint` and `filled`
-  - Loaded into memory with `{annotation: null, numNeighbors: X, numFilledNeighbors: Y, numUnfilledNeighbors: 0}`
+  - Loaded into memory with `{annotation: null, numFilledNeighbors: X, numUnfilledNeighbors: Y, numUndecidedNeighbors: Z}`
   - When user annotates a cell:
     - update `cell.annotation = X`
     - update each `neighbor.numFilledNeighbors = Y` and `neighbor.numUnfilledNeighbors = Z`

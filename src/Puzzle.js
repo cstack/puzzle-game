@@ -13,8 +13,22 @@ function filled(cell) {
   return cell.filled || cell.annotation === "filled";
 }
 
+function emojiPreviewOfPuzzle(puzzle) {
+  return puzzle.map((row) =>
+    row.map((cell) =>
+      filled(cell) ? "⬛️" : "⬜️"
+    ).join("")
+  ).join("\n");
+}
+
+function emojiPreviewOfPuzzles(puzzles) {
+  return puzzles.map((puzzle) =>
+    emojiPreviewOfPuzzle(puzzle)
+  ).join("\n\n");
+}
+
 function allSolutions(puzzle) {
-  const coords = nextBlankCell(puzzle);
+  const coords = nextUndecidedCell(puzzle);
   if (coords === null) {
     // Filled the entire grid. Check if this is a solution.
     const isSolution = isSolved(puzzle);
@@ -39,7 +53,7 @@ function allSolutions(puzzle) {
   return solutions;
 }
 
-function nextBlankCell(puzzle) {
+function nextUndecidedCell(puzzle) {
   const numRows = puzzle.length;
   const numColumns = puzzle[0].length;
   for (let rowIndex = 0; rowIndex < numRows; rowIndex++) {
@@ -80,7 +94,7 @@ function cellIsValid(cell) {
 
 function numNeighborsOfRequiredType(cell) {
   if (cell.filled) {
-    return cell.numNeighbors - cell.numFilledNeighbors;
+    return cell.numUnfilledNeighbors + cell.numUndecidedNeighbors;
   } else {
     return cell.numFilledNeighbors;
   }
@@ -119,18 +133,22 @@ function loadPuzzle(puzzle) {
   result.numColumns = numColumns;
   result.map((row, rowIndex) => {
     row.map((cell, columnIndex) => {
-      let numNeighbors = 0;
       let numFilledNeighbors = 0;
+      let numUnfilledNeighbors = 0;
+      let numUndecidedNeighbors = 0;
       forEachNeighbor(rowIndex, columnIndex, puzzle, (neighbor) => {
-        numNeighbors += 1;
         if (neighbor.filled) {
           numFilledNeighbors += 1;
+        } else if (neighbor.hint === null) {
+          numUndecidedNeighbors += 1;
+        } else {
+          numUnfilledNeighbors += 1;
         }
       });
       cell.annotation = null;
-      cell.numNeighbors = numNeighbors;
       cell.numFilledNeighbors = numFilledNeighbors;
-      cell.numUnfilledNeighbors = 0;
+      cell.numUnfilledNeighbors = numUnfilledNeighbors;
+      cell.numUndecidedNeighbors = numUndecidedNeighbors;
     });
   });
   return result;
@@ -148,10 +166,12 @@ function annotateCell(rowIndex, columnIndex, puzzle, newAnnotation) {
   if (oldAnnotation === "filled") {
     forEachNeighbor(rowIndex, columnIndex, puzzle, (neighbor) => {
       neighbor.numFilledNeighbors -= 1;
+      neighbor.numUndecidedNeighbors += 1;
     });
   } else if (oldAnnotation === "unfilled") {
     forEachNeighbor(rowIndex, columnIndex, puzzle, (neighbor) => {
       neighbor.numUnfilledNeighbors -= 1;
+      neighbor.numUndecidedNeighbors += 1;
     });
   }
 
@@ -160,10 +180,12 @@ function annotateCell(rowIndex, columnIndex, puzzle, newAnnotation) {
   if (newAnnotation === "filled") {
     forEachNeighbor(rowIndex, columnIndex, puzzle, (neighbor) => {
       neighbor.numFilledNeighbors += 1;
+      neighbor.numUndecidedNeighbors -= 1;
     });
   } else if (newAnnotation === "unfilled") {
     forEachNeighbor(rowIndex, columnIndex, puzzle, (neighbor) => {
       neighbor.numUnfilledNeighbors += 1;
+      neighbor.numUndecidedNeighbors -= 1;
     });
   }
 }

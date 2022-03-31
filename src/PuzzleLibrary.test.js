@@ -1,21 +1,7 @@
 import Puzzle from './Puzzle';
 import PuzzleLibrary from './PuzzleLibrary';
 
-function emojiPreviewOfSolution(solution) {
-  return solution.map((row) =>
-    row.map((cell) =>
-      Puzzle.filled(cell) ? "⬛️" : "⬜️"
-    ).join("")
-  ).join("\n");
-}
-
-function emojiPreviewOfSolutions(solutions) {
-  return solutions.map((solution) =>
-    emojiPreviewOfSolution(solution)
-  ).join("\n\n");
-}
-
-describe('numberOfSolutions', () => {
+describe('allSolutions', () => {
   it('works for a puzzle with 1 solution', () => {
     const puzzle = Puzzle.loadPuzzle([
       [
