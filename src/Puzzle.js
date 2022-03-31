@@ -1,42 +1,11 @@
-function checkPuzzle(puzzle) {
-  const rowCount = puzzle.length;
-  const columnCount = puzzle[0].length;
-  const neighborCounts = Array(rowCount).fill(null).map(() => Array(columnCount).fill(null).map(() => {
-    return {
-      unfilledNeighbors: 0,
-      filledNeighbors: 0,
-      filled: false,
-      hint: null,
-    };
-  }));
-  puzzle.forEach((row, rowIndex) => {
-    row.forEach((cell, columnIndex) => {
-      const filled = cell.filled || cell.annotation === "filled";
-      neighborCounts[rowIndex][columnIndex].filled = filled;
-      neighborCounts[rowIndex][columnIndex].hint = cell.hint;
-      neighborIndecies(rowIndex, columnIndex, rowCount, columnCount).forEach((coords) => {
-        if (filled) {
-          neighborCounts[coords[0]][coords[1]].filledNeighbors += 1;
-        } else {
-          neighborCounts[coords[0]][coords[1]].unfilledNeighbors += 1;
-        }
-      });
+import PuzzleLibrary from './PuzzleLibrary';
+
+function isSolved(puzzle) {
+  return puzzle.every((row, rowIndex) => {
+    return row.every((cell, columnIndex) => {
+      const valid = cellIsValid(cell);
+      return valid;
     })
-  });
-  return neighborCounts.map((row) => {
-    return row.map((checkResult) => {
-      if (checkResult.hint === null) {
-        return {
-          requiredNeighbors: null,
-        }
-      } else {
-        return {
-          requiredNeighbors: checkResult.hint,
-          neighborsShouldBeFilled: !checkResult.filled,
-          actualNeighbors: checkResult.filled ? checkResult.unfilledNeighbors : checkResult.filledNeighbors,
-        }
-      }
-    });
   });
 }
 
@@ -57,20 +26,19 @@ function neighborIndecies(rowIndex, columnIndex, rowCount, columnCount) {
   return result;
 }
 
-function isSolved(puzzle) {
-  const neighborCounts = checkPuzzle(puzzle);
-  return neighborCounts.every((row, rowIndex) => {
-    return row.every((cell, columnIndex) => {
-      return cellIsValid(cell);
-    });
-  });
+function cellIsValid(cell) {
+  if (cell.hint === null) {
+    return true;
+  } else {
+    return numNeighborsOfRequiredType(cell) === cell.hint;
+  }
 }
 
-function cellIsValid(checkResult) {
-  if (checkResult.requiredNeighbors !== null) {
-    return checkResult.requiredNeighbors === checkResult.actualNeighbors;
+function numNeighborsOfRequiredType(cell) {
+  if (cell.filled) {
+    return cell.numNeighbors - cell.numFilledNeighbors;
   } else {
-    return true;
+    return cell.numFilledNeighbors;
   }
 }
 
@@ -86,10 +54,84 @@ function emptyCell() {
   return { hint: null };
 }
 
+function copyPuzzle(puzzle) {
+  return JSON.parse(JSON.stringify(puzzle));
+}
+
+function forEachNeighbor(rowIndex, columnIndex, puzzle, callback) {
+  const numRows = puzzle.length;
+  const numColumns = puzzle[0].length;
+  neighborIndecies(rowIndex, columnIndex, numRows, numColumns).map((coords) => {
+    const neighbor = puzzle[coords[0]][coords[1]];
+    callback(neighbor);
+  });
+}
+
+function loadPuzzle(puzzle) {
+  const numRows = puzzle.length;
+  const numColumns = puzzle[0].length;
+  let result = copyPuzzle(puzzle);
+  result.numRows = numRows;
+  result.numColumns = numColumns;
+  result.map((row, rowIndex) => {
+    row.map((cell, columnIndex) => {
+      let numNeighbors = 0;
+      let numFilledNeighbors = 0;
+      forEachNeighbor(rowIndex, columnIndex, puzzle, (neighbor) => {
+        numNeighbors += 1;
+        if (neighbor.filled) {
+          numFilledNeighbors += 1;
+        }
+      });
+      cell.annotation = null;
+      cell.numNeighbors = numNeighbors;
+      cell.numFilledNeighbors = numFilledNeighbors;
+      cell.numUnfilledNeighbors = 0;
+    });
+  });
+  return result;
+}
+
+function loadAllPuzzles() {
+  return PuzzleLibrary.ALL.map((puzzle) => {
+    return loadPuzzle(puzzle);
+  });
+}
+
+function annotateCell(rowIndex, columnIndex, puzzle, newAnnotation) {
+  const cell = puzzle[rowIndex][columnIndex];
+  const oldAnnotation = cell.annotation;
+  if (oldAnnotation === "filled") {
+    forEachNeighbor(rowIndex, columnIndex, puzzle, (neighbor) => {
+      neighbor.numFilledNeighbors -= 1;
+    });
+  } else if (oldAnnotation === "unfilled") {
+    forEachNeighbor(rowIndex, columnIndex, puzzle, (neighbor) => {
+      neighbor.numUnfilledNeighbors -= 1;
+    });
+  }
+
+  cell.annotation = newAnnotation;
+
+  if (newAnnotation === "filled") {
+    forEachNeighbor(rowIndex, columnIndex, puzzle, (neighbor) => {
+      neighbor.numFilledNeighbors += 1;
+    });
+  } else if (newAnnotation === "unfilled") {
+    forEachNeighbor(rowIndex, columnIndex, puzzle, (neighbor) => {
+      neighbor.numUnfilledNeighbors += 1;
+    });
+  }
+}
+
 export default {
   cellIsValid,
-  checkPuzzle,
   emptyCell,
   generateEmptyPuzzle,
+  loadAllPuzzles,
   isSolved,
+  loadPuzzle,
+  numNeighborsOfRequiredType,
+  copyPuzzle,
+  annotateCell,
 };

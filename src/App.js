@@ -4,12 +4,12 @@ import logo from './logo.svg';
 import './water.css';
 import './App.css';
 import Puzzle from './Puzzle';
-import PuzzleLibrary from './PuzzleLibrary';
 
 class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      puzzles: Puzzle.loadAllPuzzles(),
       selectedPuzzle: null,
       editingEnabled: false,
       debug: false, // show debug menu
@@ -26,7 +26,7 @@ class App extends React.Component {
     }
 
     if (this.state.selectedPuzzle === null) {
-      contents.push(<PuzzlePicker key="PuzzlePicker" puzzles={PuzzleLibrary.ALL} handlePuzzlePicked={this.handlePuzzlePicked.bind(this)} />);
+      contents.push(<PuzzlePicker key="PuzzlePicker" puzzles={this.state.puzzles} handlePuzzlePicked={this.handlePuzzlePicked.bind(this)} />);
     } else {
       if (this.state.editingEnabled) {
         contents.push(<PuzzleEditor key="PuzzleEditor" puzzle={this.state.selectedPuzzle} />);
@@ -48,7 +48,7 @@ class App extends React.Component {
   newPuzzle() {
     this.setState({
       editingEnabled: true,
-      selectedPuzzle: Puzzle.generateEmptyPuzzle(5, 5),
+      selectedPuzzle: Puzzle.loadEmptyPuzzle(5, 5),
     })
   }
 
@@ -72,7 +72,6 @@ class PuzzleEditor extends React.Component {
   render() {
     const rowCount = this.state.puzzle.length;
     const columnCount = this.state.puzzle[0].length;
-    const neighborCounts = Puzzle.checkPuzzle(this.state.puzzle);
     return (
       <div className="PuzzleEditor">
         <div>
@@ -88,7 +87,6 @@ class PuzzleEditor extends React.Component {
         <button onClick={this.exportPuzzle.bind(this)}>Export</button>
         <Grid
           puzzle={this.state.puzzle}
-          neighborCounts={neighborCounts}
           handleCellClicked={this.handleCellClicked.bind(this)}
         />
       </div>
@@ -244,13 +242,11 @@ class PuzzleSolvingView extends React.Component {
 
   render() {
     const solved = this.state.solved;
-    const neighborCounts = Puzzle.checkPuzzle(this.state.puzzle);
     return (
       <div className="PuzzleSolvingView">
         <VictoryBanner visible={this.state.solved} />
         <Grid
           puzzle={this.state.puzzle}
-          neighborCounts={neighborCounts}
           showDetails={this.state.showDetails}
           handleCellClicked={this.handleCellClicked.bind(this)}
         />
@@ -280,12 +276,12 @@ class PuzzleSolvingView extends React.Component {
       // No more interaction after solved
       return;
     }
-    const puzzle = this.state.puzzle.slice();
+    const puzzle = Puzzle.copyPuzzle(this.state.puzzle);
     const cell = puzzle[rowIndex][columnIndex];
     if (cell.hint === null) {
       const oldAnnotation = cell.annotation;
       const newAnnotation = this.cycleAnnotation(oldAnnotation);
-      puzzle[rowIndex][columnIndex].annotation = newAnnotation;
+      Puzzle.annotateCell(rowIndex, columnIndex, puzzle, newAnnotation);
       this.setState({puzzle: puzzle});
       if (Puzzle.isSolved(puzzle)) {
         this.setState({solved: true});
@@ -301,8 +297,8 @@ class PuzzleSolvingView extends React.Component {
       case(undefined):
         return "filled";
       case("filled"):
-        return "empty";
-      case("empty"):
+        return "unfilled";
+      case("unfilled"):
         return null;
     }
   }
@@ -428,7 +424,6 @@ class Grid extends React.Component {
           key={rowIndex}
           rowIndex={rowIndex}
           cells={row}
-          neighborCounts={this.props.neighborCounts[rowIndex]}
           showDetails={this.props.showDetails}
           handleCellClicked={this.props.handleCellClicked}
         />
@@ -457,7 +452,6 @@ class Row extends React.Component {
           key={key}
           testid={key}
           value={cell}
-          checkResult={this.props.neighborCounts[columnIndex]}
           showDetails={this.props.showDetails}
           onClick={() => this.props.handleCellClicked(rowIndex, columnIndex)}
         />
@@ -478,40 +472,42 @@ class Cell extends React.Component {
   }
 
   render() {
-    const hint = this.props.value.hint;
-    const annotation = this.props.value.annotation;
-    const filled = this.props.value.filled || annotation === "filled";
+    const cell = this.props.value;
+    // const hint = this.props.value.hint;
+    // const annotation = this.props.value.annotation;
+    // const filled = cell.filled || cell.annotation === "filled";
     const showDetails = this.props.showDetails;
-    let checkResult = this.props.checkResult;
+    // let checkResult = this.props.checkResult;
 
     let colorClass = null;
-    if (filled) {
+    if (cell.filled || cell.annotation === "filled") {
       colorClass = "cell-black";
     } else {
       colorClass = "cell-white";
     }
     const className = `Cell ${colorClass}`;
+
     let text = null;
-    if (hint === null) {
-      if (annotation === "filled") {
+    if (cell.hint === null) {
+      if (cell.annotation === "filled") {
         text = "";
-      } else if (annotation === "empty") {
+      } else if (cell.annotation === "unfilled") {
         text = "・"
-      } else if (annotation === null) {
+      } else if (cell.annotation === null) {
         text = "";
       }
     } else {
-      text = hint;
+      text = cell.hint;
     }
 
     let neighborIndicator = null;
-    if (checkResult.requiredNeighbors === null) {
+    if (cell.hint === null) {
       neighborIndicator = null;
     } else {
-      if (Puzzle.cellIsValid(checkResult)) {
+      if (Puzzle.cellIsValid(cell)) {
         neighborIndicator = "✅";
       } else {
-        neighborIndicator = checkResult.actualNeighbors;
+        neighborIndicator = Puzzle.numNeighborsOfRequiredType(cell);
       }
     }
 
