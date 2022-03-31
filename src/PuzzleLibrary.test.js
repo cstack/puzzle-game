@@ -1,24 +1,61 @@
 import Puzzle from './Puzzle';
 import PuzzleLibrary from './PuzzleLibrary';
 
-describe('ALL', () => {
-  it('has a unique solution for each puzzle', () => {
-    // PuzzleLibrary.ALL.forEach((puzzle, puzzleIndex) => {
-    //   console.log(`Puzzle ${puzzleIndex}`);
-    //   expect(Puzzle.numberOfSolutions(puzzle)).toEqual(1);
-    // });
-    // const puzzle = [
-    //   [
-    //     { hint: 2, },
-    //     { hint: 2, },
-    //   ],
-    //   [
-    //     { hint: null, },
-    //     { hint: null, },
-    //   ],
-    // ];
-    // const solutions = Puzzle.allSolutions(puzzle);
-    // console.log(`solutions: ${solutions.length}`);
-    // expect(solutions.length).toEqual(1);
+function emojiPreviewOfSolution(solution) {
+  return solution.map((row) =>
+    row.map((cell) =>
+      Puzzle.filled(cell) ? "⬛️" : "⬜️"
+    ).join("")
+  ).join("\n");
+}
+
+function emojiPreviewOfSolutions(solutions) {
+  return solutions.map((solution) =>
+    emojiPreviewOfSolution(solution)
+  ).join("\n\n");
+}
+
+describe('numberOfSolutions', () => {
+  it('works for a puzzle with 1 solution', () => {
+    const puzzle = Puzzle.loadPuzzle([
+      [
+        { hint: 3, filled: true },
+        { hint: null, },
+      ],
+      [
+        { hint: null, },
+        { hint: null, },
+      ],
+    ]);
+    const solutions = Puzzle.allSolutions(puzzle);
+    expect(solutions.length).toEqual(1);
+  });
+  it('works for a puzzle with multiple solutions', () => {
+    const puzzle = Puzzle.loadPuzzle([
+      [
+        { hint: 2, filled: true },
+        { hint: null, },
+      ],
+      [
+        { hint: null, },
+        { hint: null, },
+      ],
+    ]);
+    const solutions = Puzzle.allSolutions(puzzle);
+    expect(solutions.length).toEqual(3);
+  });
+  it('works for a puzzle with 0 solutions', () => {
+    const puzzle = Puzzle.loadPuzzle([
+      [
+        { hint: 3, filled: true },
+        { hint: 3, filled: true },
+      ],
+      [
+        { hint: null, },
+        { hint: null, },
+      ],
+    ]);
+    const solutions = Puzzle.allSolutions(puzzle);
+    expect(solutions.length).toEqual(0);
   });
 });

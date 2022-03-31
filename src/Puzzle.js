@@ -9,6 +9,50 @@ function isSolved(puzzle) {
   });
 }
 
+function filled(cell) {
+  return cell.filled || cell.annotation === "filled";
+}
+
+function allSolutions(puzzle) {
+  const coords = nextBlankCell(puzzle);
+  if (coords === null) {
+    // Filled the entire grid. Check if this is a solution.
+    const isSolution = isSolved(puzzle);
+    if (isSolution) {
+      return [copyPuzzle(puzzle)];
+    } else {
+      return [];
+    }
+  }
+
+  // First try filling in the blank cell
+  annotateCell(coords[0], coords[1], puzzle, "filled");
+  const solutionsIfFilled = allSolutions(puzzle);
+  annotateCell(coords[0], coords[1], puzzle, null);
+
+  // Then try marking the cell unfilled
+  annotateCell(coords[0], coords[1], puzzle, "unfilled");
+  const solutionsIfUnfilled = allSolutions(puzzle);
+  annotateCell(coords[0], coords[1], puzzle, null);
+
+  const solutions = solutionsIfFilled.concat(solutionsIfUnfilled);
+  return solutions;
+}
+
+function nextBlankCell(puzzle) {
+  const numRows = puzzle.length;
+  const numColumns = puzzle[0].length;
+  for (let rowIndex = 0; rowIndex < numRows; rowIndex++) {
+    for (let columnIndex = 0; columnIndex < numColumns; columnIndex++) {
+      const cell = puzzle[rowIndex][columnIndex];
+      if (cell.hint === null && cell.annotation === null) {
+        return [rowIndex, columnIndex];
+      }
+    }
+  }
+  return null;
+}
+
 function neighborIndecies(rowIndex, columnIndex, rowCount, columnCount) {
   const result = [
     [rowIndex - 1, columnIndex - 1],
@@ -125,13 +169,15 @@ function annotateCell(rowIndex, columnIndex, puzzle, newAnnotation) {
 }
 
 export default {
+  allSolutions,
+  annotateCell,
   cellIsValid,
+  copyPuzzle,
   emptyCell,
+  filled,
   generateEmptyPuzzle,
-  loadAllPuzzles,
   isSolved,
+  loadAllPuzzles,
   loadPuzzle,
   numNeighborsOfRequiredType,
-  copyPuzzle,
-  annotateCell,
 };
