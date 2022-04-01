@@ -10,7 +10,7 @@ class App extends React.Component {
     super(props);
     this.state = {
       puzzles: Puzzle.loadAllPuzzles(),
-      selectedPuzzle: null,
+      selectedPuzzleIndex: null,
       editingEnabled: false,
       debug: false, // show debug menu
     };
@@ -19,19 +19,19 @@ class App extends React.Component {
   render() {
     let contents = [];
 
-    if (this.state.debug && this.state.selectedPuzzle === null) {
+    if (this.state.debug && this.state.selectedPuzzleIndex === null) {
       contents.push(<label key="edit-label">Edit</label>);
       contents.push(<input key="edit-toggle" type="checkbox" onClick={this.toggleEditing.bind(this)} />);
       contents.push(<button key="new-puzzle-button" onClick={this.newPuzzle.bind(this)}>New Puzzle</button>);
     }
 
-    if (this.state.selectedPuzzle === null) {
+    if (this.state.selectedPuzzleIndex === null) {
       contents.push(<PuzzlePicker key="PuzzlePicker" puzzles={this.state.puzzles} handlePuzzlePicked={this.handlePuzzlePicked.bind(this)} />);
     } else {
       if (this.state.editingEnabled) {
-        contents.push(<PuzzleEditor key="PuzzleEditor" puzzle={this.state.selectedPuzzle} />);
+        contents.push(<PuzzleEditor key="PuzzleEditor" puzzle={this.selectedPuzzle()} />);
       } else {
-        contents.push(<PuzzleSolvingView key="PuzzleSolvingView" puzzle={this.state.selectedPuzzle} onExitView={this.handleExitPuzzleSolvingView.bind(this)} />);
+        contents.push(<PuzzleSolvingView key="PuzzleSolvingView" puzzle={this.selectedPuzzle()} onExitView={this.handleExitPuzzleSolvingView.bind(this)} />);
       }
     }
     return (
@@ -39,6 +39,10 @@ class App extends React.Component {
         {contents}
       </div>
     );
+  }
+
+  selectedPuzzle() {
+    return this.state.puzzles[this.state.selectedPuzzleIndex];
   }
 
   toggleEditing() {
@@ -52,12 +56,17 @@ class App extends React.Component {
     })
   }
 
-  handlePuzzlePicked(puzzle) {
-    this.setState({selectedPuzzle: puzzle});
+  handlePuzzlePicked(puzzleIndex) {
+    this.setState({selectedPuzzleIndex: puzzleIndex});
   }
 
-  handleExitPuzzleSolvingView() {
-    this.setState({selectedPuzzle: null});
+  handleExitPuzzleSolvingView(puzzle) {
+    const puzzles = this.state.puzzles.slice();
+    puzzles[this.state.selectedPuzzleIndex] = puzzle;
+    this.setState({
+      selectedPuzzleIndex: null,
+      puzzles: puzzles,
+    });
   }
 }
 
@@ -166,7 +175,7 @@ class PuzzlePicker extends React.Component {
 
   render() {
     let puzzles = this.props.puzzles.map((puzzle, puzzleId) => {
-      return <MiniPuzzleView key={puzzleId} testid={`puzzle-${puzzleId}`} puzzle={puzzle} onClick={() => { this.props.handlePuzzlePicked(puzzle) } } />
+      return <MiniPuzzleView key={puzzleId} testid={`puzzle-${puzzleId}`} puzzle={puzzle} onClick={() => { this.props.handlePuzzlePicked(puzzleId) } } />
     });
     return (
       <div className="PuzzlePicker">
@@ -218,13 +227,14 @@ class MiniPuzzleCell extends React.Component {
 
   render() {
     let className = "MiniPuzzleCell";
-    if (this.props.cell.filled) {
+    if (Puzzle.filled(this.props.cell)) {
       className += " cell-black";
     } else {
       className += " cell-white";
     }
     return (
       <div className={className}>
+        {Puzzle.cellContents(this.props.cell)}
       </div>
     );
   }
@@ -234,7 +244,7 @@ class PuzzleSolvingView extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      puzzle: this.props.puzzle.slice(),
+      puzzle: this.props.puzzle,
       solved: false,
       showDetails: false
     };
@@ -253,7 +263,7 @@ class PuzzleSolvingView extends React.Component {
         <ControlPanel
           showDetails={this.state.showDetails}
           onToggleShowDetails={this.toggleShowDetails.bind(this)}
-          onBackClicked={this.props.onExitView}
+          onBackClicked={this.handleBackClicked.bind(this)}
         />
       </div>
     );
@@ -269,6 +279,10 @@ class PuzzleSolvingView extends React.Component {
         return Object.assign(cell, {annotation: null})
       })
     });
+  }
+
+  handleBackClicked() {
+    this.props.onExitView(this.state.puzzle);
   }
 
   handleCellClicked(rowIndex, columnIndex) {

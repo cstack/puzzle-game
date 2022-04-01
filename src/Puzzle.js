@@ -13,6 +13,18 @@ function filled(cell) {
   return cell.filled || cell.annotation === "filled";
 }
 
+function cellContents(cell) {
+  if (cell.hint === null) {
+    if (cell.annotation === "unfilled") {
+      return "・";
+    } else {
+      return null;
+    }
+  } else {
+    return cell.hint;
+  }
+}
+
 function emojiPreviewOfPuzzle(puzzle) {
   return puzzle.map((row) =>
     row.map((cell) => {
@@ -341,4 +353,5 @@ export default {
   loadAllPuzzles,
   loadPuzzle,
   numNeighborsOfRequiredType,
+  cellContents,
 };
