@@ -44,4 +44,17 @@ describe('allSolutions', () => {
     const solutions = Puzzle.allSolutions(puzzle);
     expect(solutions.length).toEqual(0);
   });
+  it('works for a large puzzle', () => {
+    const puzzle = Puzzle.loadPuzzle(PuzzleLibrary.PUZZLE1);
+    const solutions = Puzzle.allSolutions(puzzle);
+    expect(solutions.length).toEqual(1);
+  });
+});
+
+describe('ALL', () => {
+  Puzzle.loadAllPuzzles().map((puzzle, i) => {
+    it(`has a unique solution for puzzle ${i+1}`, () => {
+      expect(Puzzle.allSolutions(puzzle).length).toEqual(1);
+    })
+  });
 });

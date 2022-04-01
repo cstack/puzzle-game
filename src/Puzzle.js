@@ -15,9 +15,18 @@ function filled(cell) {
 
 function emojiPreviewOfPuzzle(puzzle) {
   return puzzle.map((row) =>
-    row.map((cell) =>
-      filled(cell) ? "⬛️" : "⬜️"
-    ).join("")
+    row.map((cell) => {
+      const cellState = state(cell);
+      if (cellState === "filled") {
+        return "⬛️";
+      }
+      if (cellState === "unfilled") {
+        return "🔳";
+      }
+      if (cellState === "undecided") {
+        return "⬜️";
+      }
+    }).join("")
   ).join("\n");
 }
 
@@ -28,29 +37,135 @@ function emojiPreviewOfPuzzles(puzzles) {
 }
 
 function allSolutions(puzzle) {
-  const coords = nextUndecidedCell(puzzle);
-  if (coords === null) {
-    // Filled the entire grid. Check if this is a solution.
-    const isSolution = isSolved(puzzle);
-    if (isSolution) {
-      return [copyPuzzle(puzzle)];
+  // console.log(emojiPreviewOfPuzzle(puzzle));
+  if (isSolved(puzzle)) {
+    // console.log(`Found a soltuion!`);
+    return [copyPuzzle(puzzle)];
+  }
+  const rowCount = puzzle.length;
+  const columnCount = puzzle[0].length;
+  const mostConstrainedCell = findMostConstrainedCell(puzzle);
+  // console.log(`mostConstrainedCell (${numPossibilities(mostConstrainedCell)} possibilities) ${JSON.stringify(mostConstrainedCell)}`);
+  const undecidedNeighbors = neighborIndecies(mostConstrainedCell.rowIndex, mostConstrainedCell.columnIndex, rowCount, columnCount).filter((coords) => {
+    const neighbor = puzzle[coords[0]][coords[1]];
+    return state(neighbor) === "undecided";
+  });
+  // console.log(`undecidedNeighbors ${JSON.stringify(undecidedNeighbors)}`);
+  return allCombinations(undecidedNeighbors.length, numLeftToFill(mostConstrainedCell)).map((indiciesToFill) => {
+    // console.log(`Try filling ${JSON.stringify(indiciesToFill)}`);
+    let solutions = [];
+    const stillSolvable = undecidedNeighbors.map((neighbor, index) => {
+      if (indiciesToFill.includes(index)) {
+        return annotateCell(neighbor[0], neighbor[1], puzzle, "filled");
+      } else {
+        return annotateCell(neighbor[0], neighbor[1], puzzle, "unfilled");
+      }
+    }).reduce((restOfPuzzleStillSolvable, cellStillSolvable) => restOfPuzzleStillSolvable && cellStillSolvable);
+    if (stillSolvable) {
+      // console.log("Still solvable. Keep going down this path.")
+      solutions = allSolutions(puzzle);
     } else {
-      return [];
+      // console.log("No longer solvable. Undo.")
+      solutions = [];
+    }
+    undecidedNeighbors.map((neighbor, index) => {
+      return annotateCell(neighbor[0], neighbor[1], puzzle, null);
+    });
+    return solutions;
+  });
+}
+
+function allCombinations(n, k) {
+  if (k === 0) {
+    // console.log(`allCombinations(${n}, ${k}) -> [[]]`);
+    return [[]];
+  }
+  if (n === 0) {
+    // console.log(`allCombinations(${n}, ${k}) -> []`);
+    return [];
+  }
+  if (k > n) {
+    // console.log(`allCombinations(${n}, ${k}) -> []`);
+    return [];
+  }
+  const result = allCombinations(n-1, k).concat(allCombinations(n-1, k-1).map((combos) => combos.concat(n-1)));
+  // console.log(`allCombinations(${n}, ${k}) -> ${JSON.stringify(result)}`);
+  return result;
+}
+
+function state(cell) {
+  let result = null;
+  if (cell.hint === null) {
+    if (cell.annotation === "filled") {
+      result = "filled";
+    } else if (cell.annotation === "unfilled") {
+      result = "unfilled";
+    } else if (cell.annotation === null) {
+      result = "undecided";
+    }
+  } else {
+    if (cell.filled) {
+      result = "filled";
+    } else {
+      result = "unfilled";
     }
   }
+  if (!result) {
+    // console.log("null state");
+    // console.log(cell);
+  }
+  return result;
+}
 
-  // First try filling in the blank cell
-  annotateCell(coords[0], coords[1], puzzle, "filled");
-  const solutionsIfFilled = allSolutions(puzzle);
-  annotateCell(coords[0], coords[1], puzzle, null);
+function findMostConstrainedCell(puzzle) {
+  return allCells(puzzle).filter((cell) => cell.hint !== null && cell.numUndecidedNeighbors > 0).reduce((mostConstrained, cell) => {
+    const oldCellPossibilities = numPossibilities(mostConstrained);
+    const newCellPossibilites = numPossibilities(cell);
+    // console.log(`${cell.rowIndex}-${cell.columnIndex} (${cell.hint}) : ${newCellPossibilites} possibilities`);
+    if (newCellPossibilites > 0 && newCellPossibilites < oldCellPossibilities) {
+      return cell;
+    } else {
+      return mostConstrained
+    }
+  });
+}
 
-  // Then try marking the cell unfilled
-  annotateCell(coords[0], coords[1], puzzle, "unfilled");
-  const solutionsIfUnfilled = allSolutions(puzzle);
-  annotateCell(coords[0], coords[1], puzzle, null);
+function allCells(puzzle) {
+  return puzzle.reduce((result, row) => result.concat(row));
+}
 
-  const solutions = solutionsIfFilled.concat(solutionsIfUnfilled);
-  return solutions;
+function numPossibilities(cell) {
+  const n = cell.numUndecidedNeighbors;
+  const k = numLeftToFill(cell);
+  const result = choose(n, k);
+  // console.log(`numPossibilities for ${cell.rowIndex}-${cell.columnIndex} is ${n} choose ${k} -> ${result}`)
+  return result;
+}
+
+function choose(n, k) {
+  if (k === 0) {
+    return 1;
+  }
+  if (n === 0) {
+    return 0;
+  }
+  let result = 1;
+  for (let i = 0; i < k; i++) {
+    result *= n-i;
+  }
+  for (let i = k; i > 1; i--) {
+    result /= i;
+  }
+  return result;
+}
+
+function numLeftToFill(cell) {
+  if (cell.filled) {
+    const numLeftToUnfill = cell.hint - cell.numUnfilledNeighbors;
+    return cell.numUndecidedNeighbors - numLeftToUnfill;
+  } else {
+    return cell.hint - cell.numFilledNeighbors;
+  }
 }
 
 function nextUndecidedCell(puzzle) {
@@ -149,6 +264,8 @@ function loadPuzzle(puzzle) {
       cell.numFilledNeighbors = numFilledNeighbors;
       cell.numUnfilledNeighbors = numUnfilledNeighbors;
       cell.numUndecidedNeighbors = numUndecidedNeighbors;
+      cell.rowIndex = rowIndex;
+      cell.columnIndex = columnIndex;
     });
   });
   return result;
@@ -161,6 +278,7 @@ function loadAllPuzzles() {
 }
 
 function annotateCell(rowIndex, columnIndex, puzzle, newAnnotation) {
+  // console.log(`annotateCell(${rowIndex}, ${columnIndex}, ${newAnnotation})`)
   const cell = puzzle[rowIndex][columnIndex];
   const oldAnnotation = cell.annotation;
   if (oldAnnotation === "filled") {
@@ -187,6 +305,27 @@ function annotateCell(rowIndex, columnIndex, puzzle, newAnnotation) {
       neighbor.numUnfilledNeighbors += 1;
       neighbor.numUndecidedNeighbors -= 1;
     });
+  }
+
+  let stillSolvable = true;
+  forEachNeighbor(rowIndex, columnIndex, puzzle, (neighbor) => {
+    if (!cellStillSolvable(neighbor)) {
+      // console.log(`cell is not solvable: ${JSON.stringify(neighbor)}`);
+      stillSolvable = false;
+    }
+  });
+  return stillSolvable;
+}
+
+function cellStillSolvable(cell) {
+  if (cell.hint === null) {
+    return true
+  } else {
+    if (cell.filled) {
+      return cell.numUnfilledNeighbors <= cell.hint && cell.numUnfilledNeighbors + cell.numUndecidedNeighbors >= cell.hint;
+    } else {
+      return cell.numFilledNeighbors <= cell.hint && cell.numFilledNeighbors + cell.numUndecidedNeighbors >= cell.hint;
+    }
   }
 }
 
