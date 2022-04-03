@@ -12,6 +12,7 @@ class App extends React.Component {
       puzzles: Puzzle.loadAllPuzzles(),
       selectedPuzzleIndex: null,
       editingEnabled: false,
+      solvedPuzzleIndecies: this.loadSolvedPuzzles(),
       debug: false, // show debug menu
     };
   }
@@ -27,12 +28,24 @@ class App extends React.Component {
 
     if (this.state.selectedPuzzleIndex === null) {
       contents.push(<h1 key="PuzzlePicker-title">Pick a Puzzle:</h1>);
-      contents.push(<PuzzlePicker key="PuzzlePicker" puzzles={this.state.puzzles} handlePuzzlePicked={this.handlePuzzlePicked.bind(this)} />);
+      contents.push(
+        <PuzzlePicker
+          key="PuzzlePicker"
+          puzzles={this.state.puzzles}
+          solvedPuzzleIndecies={this.state.solvedPuzzleIndecies}
+          handlePuzzlePicked={this.handlePuzzlePicked.bind(this)}
+        />);
     } else {
       if (this.state.editingEnabled) {
         contents.push(<PuzzleEditor key="PuzzleEditor" puzzle={this.selectedPuzzle()} />);
       } else {
-        contents.push(<PuzzleSolvingView key="PuzzleSolvingView" puzzle={this.selectedPuzzle()} onExitView={this.handleExitPuzzleSolvingView.bind(this)} />);
+        contents.push(
+          <PuzzleSolvingView
+            key="PuzzleSolvingView"
+            puzzle={this.selectedPuzzle()}
+            onSolved={this.handlePuzzleSolved.bind(this)}
+            onExitView={this.handleExitPuzzleSolvingView.bind(this)}
+          />);
       }
     }
     return (
@@ -40,6 +53,24 @@ class App extends React.Component {
         {contents}
       </div>
     );
+  }
+
+  handlePuzzleSolved() {
+    if (!this.state.solvedPuzzleIndecies.includes(this.state.selectedPuzzleIndex)) {
+      let solvedPuzzleIndecies = this.state.solvedPuzzleIndecies.slice();
+      solvedPuzzleIndecies.push(this.state.selectedPuzzleIndex);
+      this.setState({solvedPuzzleIndecies: solvedPuzzleIndecies});
+      localStorage.setItem("solvedPuzzles", JSON.stringify(solvedPuzzleIndecies));
+    }
+  }
+
+  loadSolvedPuzzles() {
+    const value = localStorage.getItem("solvedPuzzles");
+    if (value === null) {
+      return [];
+    } else {
+      return JSON.parse(value);
+    }
   }
 
   selectedPuzzle() {
@@ -180,7 +211,7 @@ class PuzzlePicker extends React.Component {
         key={puzzleId}
         testid={`puzzle-${puzzleId}`}
         puzzleId={puzzleId}
-        solved={Puzzle.isSolved(puzzle)}
+        solved={this.props.solvedPuzzleIndecies.includes(puzzleId)}
         onClick={() => { this.props.handlePuzzlePicked(puzzleId) } }
       />;
     });
@@ -322,11 +353,16 @@ class PuzzleSolvingView extends React.Component {
       Puzzle.annotateCell(rowIndex, columnIndex, puzzle, newAnnotation);
       this.setState({puzzle: puzzle});
       if (Puzzle.isSolved(puzzle)) {
-        this.setState({solved: true});
+        this.handleSolved();
       }
     } else {
       // Cannot add annotations to cells with hints"
     }
+  }
+
+  handleSolved() {
+    this.setState({solved: true});
+    this.props.onSolved();
   }
 
   cycleAnnotation(oldAnnotation) {
