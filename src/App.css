@@ -42,6 +42,36 @@
   display:grid;align-items:center;justify-content:center;
 }
 
+.PuzzlePicker {
+  display:  flex;
+  flex-direction: row;
+}
+
+.PuzzleIcon {
+  border: 1px solid black;
+  background: #EEE;
+  flex-grow: 1;
+  aspect-ratio: 1 / 1;
+  margin: 10px;
+  text-align: center;
+  border-radius: 10px;
+  font-size: 2em;
+}
+
+.PuzzleIcon:focus {
+  background: #CCC;
+}
+
+.PuzzleIcon.solved {
+  background: #CFC;
+}
+
+.vertical-align{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .MiniPuzzleView {
   border-bottom: 1px solid black;
   border-right: 1px solid black;

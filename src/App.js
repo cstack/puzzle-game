@@ -26,6 +26,7 @@ class App extends React.Component {
     }
 
     if (this.state.selectedPuzzleIndex === null) {
+      contents.push(<h1 key="PuzzlePicker-title">Pick a Puzzle:</h1>);
       contents.push(<PuzzlePicker key="PuzzlePicker" puzzles={this.state.puzzles} handlePuzzlePicked={this.handlePuzzlePicked.bind(this)} />);
     } else {
       if (this.state.editingEnabled) {
@@ -175,12 +176,35 @@ class PuzzlePicker extends React.Component {
 
   render() {
     let puzzles = this.props.puzzles.map((puzzle, puzzleId) => {
-      return <MiniPuzzleView key={puzzleId} testid={`puzzle-${puzzleId}`} puzzle={puzzle} onClick={() => { this.props.handlePuzzlePicked(puzzleId) } } />
+      return <PuzzleIcon
+        key={puzzleId}
+        testid={`puzzle-${puzzleId}`}
+        puzzleId={puzzleId}
+        solved={Puzzle.isSolved(puzzle)}
+        onClick={() => { this.props.handlePuzzlePicked(puzzleId) } }
+      />;
     });
     return (
       <div className="PuzzlePicker">
-        <h1>Pick a Puzzle:</h1>
         {puzzles}
+      </div>
+    );
+  }
+}
+
+class PuzzleIcon extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    let className = "PuzzleIcon vertical-align";
+    if (this.props.solved) {
+      className += " solved";
+    }
+    return (
+      <div className={className} data-testid={this.props.testid} onClick={this.props.onClick}>
+        {this.props.puzzleId + 1}
       </div>
     );
   }
